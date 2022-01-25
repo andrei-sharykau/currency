@@ -40,8 +40,24 @@ class GetCurrency extends Command
      *
      * @return int
      */
+
     public function handle()
     {
+
+        #смотрим свужую дату в базе
+        $cur_rate = DB::table('currency_rate')
+            ->latest('date')
+            ->first();
+
+        # если данных в базе нету, то дата на 15 дней раньше
+        if ($cur_rate) {
+            $date = new DateTime($cur_rate->date);
+            $date = $date->modify('1 day');
+        }
+        else {
+            $date = new DateTime();
+            $date = $date->modify('-15 day');
+        }
 
         # проверяем пустая или нет таблица валют
         $cur = DB::table('currency')->count();
@@ -49,12 +65,12 @@ class GetCurrency extends Command
 
         $url = "https://www.nbrb.by/api/exrates/rates?periodicity=0&ondate=";
 
-        # берем последние 60 дней
-        $date = new DateTime();
-        for ($i = 0; $i <= 15; $i++) {
+        # сегодняшняя дата
+        $today = new DateTime();
 
+        while ($date <= $today) {
             # дата курса
-            print $date->format('Y-m-d') . "\n";
+            print "загружаем курсы на дату: " . $date->format('Y-m-d') . "\n";
 
             # загружаем курс на дату
             $response = Http::get($url . $date->format('Y-m-d'));
@@ -68,8 +84,6 @@ class GetCurrency extends Command
                         'numcode' => intval($item["Cur_ID"]),
                         'scale' => intval($item["Cur_Scale"])
                     ]);
-
-
                 };
 
                 # заполняем таблицу курсами
@@ -80,9 +94,8 @@ class GetCurrency extends Command
                 ]);
             }
 
-            $date =  $date->modify( '-1 day' );
             $load_currency = False;
-
+            $date = $date->modify('1 day');
         }
 
         return 0;
