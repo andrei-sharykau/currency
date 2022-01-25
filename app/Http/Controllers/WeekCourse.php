@@ -10,17 +10,16 @@ class WeekCourse extends Controller
 {
     public function show()
     {   
-        $start_date = new DateTime('-6 days');
-        $end_date = new DateTime();
+        $old_date = new DateTime('-6 days');
+        $today = new DateTime();
 
-        $message = "Курсы валют с: " . $start_date->format('Y-m-d') . " по: " . $end_date->format('Y-m-d');
+        $message = "Курсы валют с: " . $old_date->format('d-m-Y') . " по: " . $today->format('d-m-Y');
 
         $date_period=array();
-        for ($i = 0; $i <= 6; $i++) {
-            array_push($date_period, $end_date->format('Y-m-d'));
-            $end_date = $end_date->modify( '-1 day' );
+        while ($old_date <= $today) {
+            array_push($date_period, $old_date->format('d-m-Y'));
+            $old_date = $old_date->modify( '1 day' );
         }
-
 
 
         $all_currency = DB::table('currency')
@@ -29,16 +28,38 @@ class WeekCourse extends Controller
 
         $all_currency_rate = DB::table('currency_rate')
             ->select('numcode', 'rate', 'date')
-            ->whereDate('currency_rate.date', '>', $end_date)
+            ->oldest('date')
+            ->whereDate('currency_rate.date', '>=', $today->modify('-6 day'))
             ->get();
 
+
+        $all_currency_all_rates=array();
+        $rates = array();
+        $my_cur = array();
+        foreach ($all_currency as $cur) {
+            foreach ($all_currency_rate as $rate) {
+                if ($cur->numcode == $rate->numcode) {
+                    array_push($rates, $rate->rate);
+                }
+            }
+            
+            $my_cur = [
+                'numcode'  => $cur->numcode,
+                'charcode' => $cur->charcode,
+                'name'     => $cur->name,
+                'scale'    => $cur->scale,
+                'rates'    => $rates];
+            
+            array_push($all_currency_all_rates, $my_cur);   
+            $my_cur =array();
+            $rates = array();
+        }
 
 
         return view('welcome', [
             'message' => $message, 
             'date_period' => $date_period,
-            'all_currency' => $all_currency,
-            'all_currency_rate' => $all_currency_rate,
+            'all_currency_all_rates' => $all_currency_all_rates,
         ]);
     }
 }

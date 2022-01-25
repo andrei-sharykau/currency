@@ -26,23 +26,18 @@
             <th> {{ $date }} </th>
             @endforeach
 
-            @foreach ($all_currency as $cur)
+            @foreach ($all_currency_all_rates as $cur)
                 <tr>
                 <td>
-                За {{ $cur->scale }} {{ $cur->name }}({{ $cur->charcode }}/{{ $cur->numcode }})
+                    {{ $cur['name'] }} ({{ $cur['charcode'] }}/{{ $cur['numcode'] }}) (за {{ $cur['scale'] }})
                 </td>
-            
-                @foreach ($all_currency_rate as $cur_rate)
-                    
-                    @if ($cur_rate->numcode === $cur->numcode)
+                    @foreach ($cur['rates'] as $rate)
+
                     <td>
-                        {{ $cur_rate->rate}}
+                        {{ $rate }}
                     </td>
-                    @endif
-                    
 
-                @endforeach                
-
+                    @endforeach
                 </tr>
             @endforeach
 
