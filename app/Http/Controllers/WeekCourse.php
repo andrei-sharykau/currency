@@ -1,8 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
-use Illuminate\Support\Facades\DB;
-
+use App\Models\Currency;
+use App\Models\CurrencyRate;
 use Illuminate\Http\Request;
 use DateTime;
 
@@ -22,21 +22,16 @@ class WeekCourse extends Controller
         }
 
 
-        $all_currency = DB::table('currency')
-            ->select('numcode', 'charcode', 'name', 'scale')
-            ->get();
-
-        $all_currency_rate = DB::table('currency_rate')
+        $all_currency_rate = CurrencyRate::whereDate('date', '>=', $today->modify('-6 day'))
             ->select('numcode', 'rate', 'date')
             ->oldest('date')
-            ->whereDate('currency_rate.date', '>=', $today->modify('-6 day'))
             ->get();
 
 
         $all_currency_all_rates=array();
         $rates = array();
         $my_cur = array();
-        foreach ($all_currency as $cur) {
+        foreach (Currency::all() as $cur) {
             foreach ($all_currency_rate as $rate) {
                 if ($cur->numcode == $rate->numcode) {
                     array_push($rates, $rate->rate);
